@@ -1,0 +1,12 @@
+package: github.com/docker/dtr
+import:
+- package: github.com/mitchellh/go-homedir
+- package: gopkg.in/yaml.v2
+- package: k8s.io/api
+  subpackages:
+  - core/v1
+- package: k8s.io/client-go
+  version: c6f8cf2c47d21d55fa0df928291b2580544886c8
+  subpackages:
+  - kubernetes
+  - tools/clientcmd

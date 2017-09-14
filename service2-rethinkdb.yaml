@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "dtr-rethinkdb-cluster"
+  labels:
+    app: "rethinkdb-cluster"
+    chart: "rethinkdb-0.0.3"
+    heritage: "Tiller"
+    release: "dtr"
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  clusterIP: None
+  ports:
+    - port: 29015
+      targetPort: cluster
+  selector:
+    app: "rethinkdb-cluster"
+    release: "dtr"

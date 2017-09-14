@@ -1,0 +1,92 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: "dtr-rethinkdb-cluster"
+  labels:
+    app: "rethinkdb-cluster"
+    chart: "rethinkdb-0.0.3"
+    heritage: "Tiller"
+    release: "dtr"
+spec:
+  serviceName: "dtr-rethinkdb-cluster"
+  replicas: 3
+  template:
+    metadata:
+      name: "dtr-rethinkdb-cluster"
+      labels:
+        app: "rethinkdb-cluster"
+        heritage: "Tiller"
+        release: "dtr"
+        chart: "rethinkdb-0.0.3"
+      annotations:
+    spec:
+      containers:
+        - name: rethinkdb-cluster
+          image: "codylundquist/helm-rethinkdb-cluster:0.1.0"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: cluster
+              containerPort: 29015
+          args:
+            - "--directory"
+            - "/data/db"
+            - "--bind"
+            - "all"
+            - "--no-http-admin"
+            - "--cache-size"
+            - "100"
+          volumeMounts:
+            - name: "datadir"
+              mountPath: "/data"
+          env:
+            - name: RETHINK_CLUSTER_SERVICE
+              value: "dtr-rethinkdb-cluster"
+            - name: RETHINKDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dtr-rethinkdb
+                  key: rethinkdb-password
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          livenessProbe:
+            exec:
+              command:
+                - /rethinkdb-probe
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - /rethinkdb-probe
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            {}
+            
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+      annotations:
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: "1Gi"

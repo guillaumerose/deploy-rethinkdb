@@ -1,0 +1,70 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: "dtr-rethinkdb-proxy"
+  labels:
+    app: "rethinkdb-proxy"
+    chart: "rethinkdb-0.0.3"
+    heritage: "Tiller"
+    release: "dtr"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: dtr-rethinkdb-proxy
+      labels:
+        app: rethinkdb-proxy
+        heritage: "Tiller"
+        release: "dtr"
+        chart: "rethinkdb-0.0.3"
+      annotations:
+    spec:
+      containers:
+        - name: rethinkdb-proxy
+          image: "codylundquist/helm-rethinkdb-cluster:0.1.0"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: cluster
+              containerPort: 29015
+            - name: driver
+              containerPort: 28015
+            - name: admin
+              containerPort: 8080
+          args:
+            - "--bind"
+            - "all"
+          volumeMounts:
+            - name: "secrets"
+              mountPath: "/secrets"
+          env:
+            - name: PROXY
+              value: "true"
+            - name: RETHINK_CLUSTER_SERVICE
+              value: "dtr-rethinkdb-cluster"
+            - name: RETHINKDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dtr-rethinkdb
+                  key: rethinkdb-password
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          resources:
+            {}
+            
+      volumes:
+        - name: secrets
+          projected:
+            sources:
+            - secret:
+                name: dtr-rethinkdb
